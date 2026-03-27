@@ -14,6 +14,7 @@ warnings.filterwarnings("ignore")
 # PAGE CONFIG
 st.set_page_config(
     page_title="Global Superstore Dashboard",
+    # page_icon="🛒",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -22,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* ── top bar ── */
-    [data-testid="stHeader"]  {background: #072e33;}
+    [data-testid="stHeader"]  {background: #0f969c;}
 
     /* ── sidebar ── */
     [data-testid="stSidebar"] {
@@ -55,7 +56,7 @@ st.markdown("""
         background: white;
         border-radius: 12px;
         padding: 16px 18px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(12,112,117,0.35);
         border-left: 5px solid #0e7490;
         border-top: 1px solid #e2e8f0;
         border-right: 1px solid #e2e8f0;
@@ -64,7 +65,7 @@ st.markdown("""
     [data-testid="stMetricLabel"] {
         font-size: 12px;
         font-weight: 700;
-        color: #0e7490;
+        color: #2c2f38;
         letter-spacing: .5px;
         text-transform: uppercase;
     }
@@ -83,6 +84,11 @@ st.markdown("""
     .section-title {
         font-size: 17px; font-weight: 700;
         color: #0e7490; margin-top: 8px; margin-bottom: 4px;
+    }
+    /* ── KPI section title specifically ── */
+    .kpi-title {
+        font-size: 17px; font-weight: 700;
+        color: #294d61; margin-top: 8px; margin-bottom: 4px;
     }
 
     /* ── divider ── */
@@ -176,11 +182,21 @@ def style(fig):
         margin=dict(t=50, b=30, l=30, r=30),
         legend=dict(bgcolor="rgba(0,0,0,0)"),
     )
+    fig.update_layout(
+        shapes=[dict(
+            type="rect", xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="#6da5c0", width=1.5),
+            fillcolor="rgba(0,0,0,0)",
+            layer="above",
+        )]
+    )
     return fig
 
 
 # SIDEBAR – FILTERS
 with st.sidebar:
+    # st.image("https://img.icons8.com/color/96/000000/shopping-cart.png", width=60)
     st.markdown("### Global Superstore")
     st.markdown("---")
     st.markdown("###  Filters")
@@ -233,7 +249,7 @@ df = df_raw[
 ].copy()
 
 if df.empty:
-    st.warning("⚠️ No data matches your filters. Please adjust the sidebar selections.")
+    st.warning("No data matches your filters. Please adjust the sidebar selections.")
     st.stop()
 
 
@@ -258,7 +274,7 @@ country_sales = df.groupby("Country", as_index=False)["Sales"].sum()
 # HEADER
 st.markdown(
     "<h1 style='text-align:center; color:#05161a;'>"
-    "Insights on Sales and Profit Globally for Various Categories-Year (2021-2024)</h1>",
+    "Insights on Global Sales and Profit on Various Categories (2021-2024)</h1>",
     unsafe_allow_html=True,
 )
 
@@ -266,7 +282,7 @@ st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
 
 # KPI SECTION – aligned to the 7 visualisations in the dashboard
-st.markdown("<div class='section-title'>Key Performance Indicators</div>",
+st.markdown("<div class='kpi-title'> Key Performance Indicators</div>",
             unsafe_allow_html=True)
 
 # ── KPI 1: Monthly Sales Trend → Sales Growth (line chart insight)
@@ -610,6 +626,12 @@ with c6:
         margin=dict(t=50, b=30, l=30, r=50),
         barmode="overlay",
     )
+    fig_hkde.update_layout(shapes=[dict(
+        type="rect", xref="paper", yref="paper",
+        x0=0, y0=0, x1=1, y1=1,
+        line=dict(color="#6da5c0", width=1.5),
+        fillcolor="rgba(0,0,0,0)", layer="above",
+    )])
     st.plotly_chart(fig_hkde, use_container_width=True)
     
     
@@ -627,7 +649,7 @@ fig_bubble = px.scatter(
     color_continuous_scale=TEAL,
     text="Sub-Category",
     size_max=60,
-    title=" Sub-Category Sales vs Profit",
+    title="Sub-Category Sales vs Profit",
     labels={
         "Total_Sales"  : "Total Sales ($)",
         "Total_Profit" : "Total Profit ($)",
@@ -705,11 +727,11 @@ st.plotly_chart(style(fig_map), use_container_width=True)
 
 
 
-# ROW 5 -  Funnel + Treemap (side by side)
+# ROW 5 – Funnel Chart | Treemap
 st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 nc1, nc2 = st.columns(2)
 
-#  Funnel – Average Order Value by Segment → Ship Mode
+# Funnel – Average Order Value by Segment → Ship Mode
 with nc1:
     funnel_df = df.groupby(["Segment", "Ship Mode"], as_index=False).agg(
         Orders=("Order ID", "nunique"),
@@ -731,10 +753,16 @@ with nc1:
         title="Avg Order Value by Customer Segment",
         paper_bgcolor="white", plot_bgcolor="#f9fafb",
         font_family="Arial", margin=dict(t=60, b=30, l=10, r=10),
+        shapes=[dict(
+            type="rect", xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="#6da5c0", width=1.5),
+            fillcolor="rgba(0,0,0,0)", layer="above",
+        )],
     )
     st.plotly_chart(fig_funnel, use_container_width=True)
 
-#  Treemap – Sales hierarchy Market → Category → Sub-Category
+# Treemap – Sales hierarchy Market → Category → Sub-Category
 with nc2:
     treemap_df = df.groupby(["Market", "Category", "Sub-Category"], as_index=False)["Sales"].sum()
     fig_treemap = px.treemap(
@@ -751,35 +779,42 @@ with nc2:
     )
     fig_treemap.update_layout(
         paper_bgcolor="white", font_family="Arial", margin=dict(t=60, b=10, l=10, r=10),
+        shapes=[dict(
+            type="rect", xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="#6da5c0", width=1.5),
+            fillcolor="rgba(0,0,0,0)", layer="above",
+        )],
     )
     st.plotly_chart(fig_treemap, use_container_width=True)
 
 
-# ROW 6 ─ Violin – Shipping Duration by Ship Mode (full width)
-st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+# # ── Violin – Shipping Duration by Ship Mode (full width)
+# st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+# st.markdown("<div class='section-title'>Shipping Efficiency</div>", unsafe_allow_html=True)
 
-df["Shipping Days"] = (df["Ship Date"] - df["Order Date"]).dt.days.clip(lower=0)
-fig_violin = px.violin(
-    df,
-    x="Ship Mode",
-    y="Shipping Days",
-    color="Ship Mode",
-    color_discrete_sequence=px.colors.qualitative.Vivid,
-    box=True,
-    points="outliers",
-    title="Shipping Duration by Ship Mode",
-    labels={"Shipping Days": "Days to Ship", "Ship Mode": ""},
-)
-fig_violin.update_traces(
-    hovertemplate="<b>%{x}</b><br>Days: %{y}<extra></extra>"
-)
-st.plotly_chart(style(fig_violin), use_container_width=True)
+# df["Shipping Days"] = (df["Ship Date"] - df["Order Date"]).dt.days.clip(lower=0)
+# fig_violin = px.violin(
+#     df,
+#     x="Ship Mode",
+#     y="Shipping Days",
+#     color="Ship Mode",
+#     color_discrete_sequence=px.colors.qualitative.Vivid,
+#     box=True,
+#     points="outliers",
+#     title="Violin – Shipping Duration by Ship Mode",
+#     labels={"Shipping Days": "Days to Ship", "Ship Mode": ""},
+# )
+# fig_violin.update_traces(
+#     hovertemplate="<b>%{x}</b><br>Days: %{y}<extra></extra>"
+# )
+# st.plotly_chart(style(fig_violin), use_container_width=True)
 
 
 # EXPLORE SECTION – Visual Panels
 if explore_option != "None":
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='section-title'> Explore – {explore_option}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='section-title'>🔍 Explore – {explore_option}</div>", unsafe_allow_html=True)
 
 if explore_option == "Segment Analysis":
     ea1, ea2 = st.columns(2)
@@ -904,7 +939,15 @@ elif explore_option == "Market Breakdown":
     fig_mkt_sun.update_traces(
         hovertemplate="<b>%{label}</b><br>Sales: $%{value:,.0f}<extra></extra>"
     )
-    fig_mkt_sun.update_layout(paper_bgcolor="white", font_family="Arial", margin=dict(t=60,b=10,l=10,r=10))
+    fig_mkt_sun.update_layout(
+        paper_bgcolor="white", font_family="Arial", margin=dict(t=60,b=10,l=10,r=10),
+        shapes=[dict(
+            type="rect", xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="#6da5c0", width=1.5),
+            fillcolor="rgba(0,0,0,0)", layer="above",
+        )],
+    )
     st.plotly_chart(fig_mkt_sun, use_container_width=True)
 
 
@@ -913,6 +956,6 @@ elif explore_option == "Market Breakdown":
 st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 st.markdown(
     "<p style='text-align:center; font-size:12px; color:black;'>"
-    "Global Superstore Dashboard • Built by Team Hammer</p>",
+    "Sales & Profit Analytics • Built by Team Hammer</p>",
     unsafe_allow_html=True,
 )
